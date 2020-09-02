@@ -1,7 +1,7 @@
 # Theory and data fitting of the covariance spectrum of random networks
 
-These are the codes associated with the preprint "Hu, Y. and Sompolinsky, H., *The spectrum of covariance matrices of randomly connected recurrent neuronal networks*, bioRxiv 2020.
-"
+These are the codes associated with the preprint ["Hu, Y. and Sompolinsky, H., *The spectrum of covariance matrices of randomly connected recurrent neuronal networks*, bioRxiv 2020.
+"](https://www.biorxiv.org/content/10.1101/2020.08.31.274936v1)
 
 Please refer to the manuscript for more details.
 
