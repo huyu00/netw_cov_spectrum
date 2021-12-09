@@ -197,53 +197,53 @@ if flag_branch2:
 #     np.savez(file1, xmax_mat, kre_ls, g_ls, kre_bound, g_bound,
 #     kre_branch1, g_branch1, kre_branch2, g_branch2, xmax2_mat, t1-t0)
 #
-# # plot from data
-# run_id = 1
-# flag_inset = True
-# if flag_inset:
-#     plt.rcParams.update({'font.size': 48})
-#     # plt.rcParams['text.color'] = 'white'
-#     plt.rcParams['axes.labelcolor'] = 'white'
-#     plt.rcParams['xtick.color'] = 'white'
-#     plt.rcParams['ytick.color'] = 'white'
-# with np.load('./data/figure5c_'+str(run_id)+'.npz') as file1:
-#     xmax_mat = file1['arr_0']
-#     kre_ls = file1['arr_1']
-#     g_ls = file1['arr_2']
-#     kre_bound = file1['arr_3']
-#     g_bound = file1['arr_4']
-#     kre_branch1 = file1['arr_5']
-#     g_branch1 = file1['arr_6']
-#     kre_branch2 = file1['arr_7']
-#     g_branch2 = file1['arr_8']
-#     xmat2_mat = file1['arr_9']
-#     t01 = file1['arr_10']
-# print('runtime (hrs):', round(t01/3600,1))
-# if flag_inset:
-#     fig = plt.figure(figsize=(15,10.5))
-# else:
-#     fig = plt.figure(figsize=(10,7))
-# plt.imshow(xmax_mat, extent=[kre_ls[0],kre_ls[-1],g_ls[0],g_ls[-1]],
-#     aspect='auto', origin='lower')
-# if flag_inset:
-#     plt.plot(kre_bound, g_bound, 'y--', label=r'$g_c$', linewidth=5)
-# else:
-#     plt.plot(kre_bound, g_bound, 'y--', label=r'$g_c$', linewidth=3)
-# plt.plot(kre_branch1, g_branch1, 'r--', linewidth=3)
-# plt.plot(kre_branch2, g_branch2, 'm-', linewidth=3)
-# plt.colorbar()
-# plt.xlabel(r'$\hat{\kappa}_{re}$')
-# plt.ylabel(r'$g$')
-# if not flag_inset:
-#     plt.title(r'$x_{\max}$')
-# plt.legend()
-# plt.tight_layout()
-# fig.savefig('./figure/figure5c_'+str(run_id)+'.png', dpi=600, transparent=True)
+# plot from data
+run_id = 17
+flag_inset = True
+if flag_inset:
+    plt.rcParams.update({'font.size': 48})
+    # plt.rcParams['text.color'] = 'white'
+    plt.rcParams['axes.labelcolor'] = 'white'
+    plt.rcParams['xtick.color'] = 'white'
+    plt.rcParams['ytick.color'] = 'white'
+with np.load('./data/figure5c_'+str(run_id)+'.npz') as file1:
+    xmax_mat = file1['arr_0']
+    kre_ls = file1['arr_1']
+    g_ls = file1['arr_2']
+    kre_bound = file1['arr_3']
+    g_bound = file1['arr_4']
+    kre_branch1 = file1['arr_5']
+    g_branch1 = file1['arr_6']
+    kre_branch2 = file1['arr_7']
+    g_branch2 = file1['arr_8']
+    xmat2_mat = file1['arr_9']
+    t01 = file1['arr_10']
+print('runtime (hrs):', round(t01/3600,1))
+if flag_inset:
+    fig = plt.figure(figsize=(15,10.5))
+else:
+    fig = plt.figure(figsize=(10,7))
+plt.imshow(xmax_mat, extent=[kre_ls[0],kre_ls[-1],g_ls[0],g_ls[-1]],
+    aspect='auto', origin='lower')
+if flag_inset:
+    plt.plot(kre_bound, g_bound, 'y--', label=r'$g_c$', linewidth=5)
+else:
+    plt.plot(kre_bound, g_bound, 'y--', label=r'$g_c$', linewidth=3)
+plt.plot(kre_branch1, g_branch1, 'r--', linewidth=3)
+plt.plot(kre_branch2, g_branch2, 'm-', linewidth=3)
+plt.colorbar()
+plt.xlabel(r'$\hat{\kappa}_{re}$')
+plt.ylabel(r'$g$')
+if not flag_inset:
+    plt.title(r'$x_{\max}$')
+plt.legend()
+plt.tight_layout()
+fig.savefig('./figure/figure5c_'+str(run_id)+'.png', dpi=600, transparent=True)
 
 
 
 
-
+plt.rcParams.update({'font.size': 18})
 # example spectrum with normal matching
 kre = -0.7
 gr = 0.3
@@ -345,48 +345,48 @@ fig.savefig('./figure/figure5_supp_e.png', dpi=600)
 #     kre_branch1, g_branch1, kre_branch2, g_branch2, xmax2_mat, t1-t0)
 #
 #
-# # plot from data
-# run_id = 1
-# flag_inset = False
-# if flag_inset:
-#     plt.rcParams.update({'font.size': 48})
-#     # plt.rcParams['text.color'] = 'white'
-#     plt.rcParams['axes.labelcolor'] = 'white'
-#     plt.rcParams['xtick.color'] = 'white'
-#     plt.rcParams['ytick.color'] = 'white'
-# with np.load('./data/figure5e_'+str(run_id)+'.npz') as file1:
-#     xmax_mat = file1['arr_0']
-#     kre_ls = file1['arr_1']
-#     g_ls = file1['arr_2']
-#     kre_bound = file1['arr_3']
-#     g_bound = file1['arr_4']
-#     kre_branch1 = file1['arr_5']
-#     g_branch1 = file1['arr_6']
-#     kre_branch2 = file1['arr_7']
-#     g_branch2 = file1['arr_8']
-#     xmat2_mat = file1['arr_9']
-#     t01 = file1['arr_10']
-# print('runtime (hrs):', round(t01/3600,1))
-# if flag_inset:
-#     fig = plt.figure(figsize=(15,10.5))
-# else:
-#     fig = plt.figure(figsize=(10,7))
-# plt.imshow(xmax_mat, extent=[kre_ls[0],kre_ls[-1],g_ls[0],g_ls[-1]],
-#     aspect='auto', origin='lower')
-# if flag_inset:
-#     plt.plot(kre_bound, g_bound, 'y--', label=r'$g_c$', linewidth=5)
-# else:
-#     plt.plot(kre_bound, g_bound, 'y--', label=r'$g_c$', linewidth=3)
-# plt.plot(kre_branch1[kre_branch1<0], g_branch1[kre_branch1<0], 'r--', linewidth=3)
-# kre_max = 2*sqrt(2)-3
-# tf_1 = kre_ls<2*sqrt(2)-3 # g_kre_c < gc
-# g_non_diff = (1+kre_ls[tf_1])/(-4*kre_ls[tf_1])
-# plt.plot(kre_ls[tf_1], g_non_diff, 'k--', linewidth=2)
-# plt.colorbar()
-# plt.xlabel(r'$\hat{\kappa}_{re}$')
-# plt.ylabel(r'$g$')
-# if not flag_inset:
-#     plt.title(r'$x_{\max}$')
-# plt.legend()
-# plt.tight_layout()
-# fig.savefig('./figure/figure5e_'+str(run_id)+'.png', dpi=600, transparent=True)
+# plot from data
+run_id = 8
+flag_inset = False
+if flag_inset:
+    plt.rcParams.update({'font.size': 18})
+    # plt.rcParams['text.color'] = 'white'
+    plt.rcParams['axes.labelcolor'] = 'white'
+    plt.rcParams['xtick.color'] = 'white'
+    plt.rcParams['ytick.color'] = 'white'
+with np.load('./data/figure5e_'+str(run_id)+'.npz') as file1:
+    xmax_mat = file1['arr_0']
+    kre_ls = file1['arr_1']
+    g_ls = file1['arr_2']
+    kre_bound = file1['arr_3']
+    g_bound = file1['arr_4']
+    kre_branch1 = file1['arr_5']
+    g_branch1 = file1['arr_6']
+    kre_branch2 = file1['arr_7']
+    g_branch2 = file1['arr_8']
+    xmat2_mat = file1['arr_9']
+    t01 = file1['arr_10']
+print('runtime (hrs):', round(t01/3600,1))
+if flag_inset:
+    fig = plt.figure(figsize=(15,10.5))
+else:
+    fig = plt.figure(figsize=(10,7))
+plt.imshow(xmax_mat, extent=[kre_ls[0],kre_ls[-1],g_ls[0],g_ls[-1]],
+    aspect='auto', origin='lower')
+if flag_inset:
+    plt.plot(kre_bound, g_bound, 'y--', label=r'$g_c$', linewidth=5)
+else:
+    plt.plot(kre_bound, g_bound, 'y--', label=r'$g_c$', linewidth=3)
+plt.plot(kre_branch1[kre_branch1<0], g_branch1[kre_branch1<0], 'r--', linewidth=3)
+kre_max = 2*sqrt(2)-3
+tf_1 = kre_ls<2*sqrt(2)-3 # g_kre_c < gc
+g_non_diff = (1+kre_ls[tf_1])/(-4*kre_ls[tf_1])
+plt.plot(kre_ls[tf_1], g_non_diff, 'k--', linewidth=2)
+plt.colorbar()
+plt.xlabel(r'$\hat{\kappa}_{re}$')
+plt.ylabel(r'$g$')
+if not flag_inset:
+    plt.title(r'$x_{\max}$')
+plt.legend()
+plt.tight_layout()
+fig.savefig('./figure/figure5e_'+str(run_id)+'.png', dpi=600, transparent=True)

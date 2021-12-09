@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 import scipy.optimize as opt
 
-# created by Yu Hu (mahy@ust.hk), Aug 2020
+# created by Yu Hu (mahy@ust.hk)
 
 # normed=True if the mean is scaled to 1 (for fitting to empirical eigs)
 # iid Gaussian random connectivity
@@ -13,18 +13,14 @@ def mu_g(g):
 
 def support_g(g, normed=False):
     # exact support
-    z = 1. / g
-    xz12 =  np.zeros(2)
-    xz12[0] = 1./8/z**2 * (-1 + 20*z**2 + 8*z**4 - (1 + 8*z**2)**(3./2))
-    xz12[1] = 1./8/z**2 * (-1 + 20*z**2 + 8*z**4 + (1 + 8*z**2)**(3./2))
-    x12 = xz12 * g**2
-    xi12 = 1. / x12
-    xi12 = xi12[::-1]
+    x12 =  np.zeros(2)
+    x12[0] = (2+5*g**2-g**4/4 - 1/4*g*(8+g**2)**(3/2))/(1-g**2)**3/2
+    x12[1] = (2+5*g**2-g**4/4 + 1/4*g*(8+g**2)**(3/2))/(1-g**2)**3/2
     mu = mu_g(g)
     if normed:
-        return xi12/mu
+        return x12/mu
     else:
-        return xi12
+        return x12
 
 def pdf_g_x(x,g, normed=False):
     # return the prob density for a list of x
@@ -143,8 +139,36 @@ def pdf2cdf(x, parameters, fmu, fsupport, fpdf_x, normed=False):
     P_o[id_sort] = P
     return P_o
 
+def quantile_g_p(p,g,lower_tail=True,normed=False):
+    from scipy.optimize import root_scalar
+    mu = mu_g(g)
+    x12 = support_g(g)
+    if lower_tail:
+        f = lambda x: cdf_g_x([x],g) - p
+        fp = lambda x: pdf_g_x(x,g)
+    else:
+        f = lambda x: 1 - cdf_g_x([x],g) - p
+        fp = lambda x:  - pdf_g_x(x,g)
+    sol = root_scalar(f,bracket=[x12[0],x12[1]],fprime=fp)
+    x = sol.root
+    if normed:
+        x = x / mu
+    return x
 
-
+def quantile_g(g,N,normed=False):
+    # for rank plot of network size N, decending order
+    mu = mu_g(g)
+    x12 = support_g(g)
+    x_ls = np.zeros(N)
+    for i in range(N):
+        p = (N-i-1/2)/N
+        if p<1/2:
+            x_ls[i] = quantile_g_p(p,g,lower_tail=True)
+        else:
+            x_ls[i] = quantile_g_p(1-p,g,lower_tail=False)
+    if normed:
+        x_ls = x_ls / mu
+    return x_ls
 
 
 
@@ -415,6 +439,292 @@ def cdf_g_kre(g,kre, nx=40, normed=False):
 
 
 
+# time-sampled theory for iid Gaussian random connectivity
+def mu_g_a(g,a):
+    # mean of cov eigs
+    if a>1:
+        return a/(1-g**2)
+    else:
+        return 1/(1-g**2)
+
+def support_g_a(g,a, normed=False):
+    # exact support
+    b = a
+    n = 1/g
+    A3 = 4*(-1. + n**2)**3
+    A2 = +(1 - 20*n**2 - 8*n**4 + b**2*(-1 + n**2)**4 + 2*b*(-1 + n**2)**2*(-5 + 2*n**2))
+    A1 = -2*(-2*n**2 + b**3*(-1 + n**2)**3 + b*(-1 + 15*n**2 + 4*n**4) + b**2*(4 - 10*n**2 + 5*n**4 + n**6))
+    A0 = (4*b - 8*b**2 + 4*b**3 + 4*b*(-1 + n**2) - 8*b**2*(-1 + n**2) + 4*b**3*(-1 + n**2) + b**2*(-1 + n**2)**2
+          -2*b**3*(-1 + n**2)**2 + b**4*(-1 + n**2)**2)
+    z_ls = np.sort(np.roots([A3, A2, A1, A0])) / g**2
+    x12 = np.zeros(2)
+    x12[0] = z_ls[1]
+    x12[1] = z_ls[2]
+    mu = mu_g_a(g,a)
+    if normed:
+        return x12/mu
+    else:
+        return x12
+
+def pdf_g_a_x(x,g,a, normed=False):
+    # return the prob density for a list of x
+    x = np.array(x)
+    mu = mu_g_a(g,a)
+    if normed:
+        x = x * mu
+    n = np.size(x)
+    p = np.zeros(n)
+    x12 = support_g_a(g,a)
+    # inside the support
+    tf_in = np.logical_and(x>x12[0], x<x12[1])
+    x_in = x[tf_in]
+    p_in = np.zeros(len(x_in))
+
+    eta = 1/g
+    for i, xi in enumerate(x_in):
+        z = xi * g**2
+        p_eq = [(z+a)**2, 2*z + 2*a + z*a*(1-abs(eta)**2) + a**2,
+               1+z*(1-abs(eta)**2) + 2*a, 1]
+        x_p =  -(np.roots(p_eq) + 1) / z
+        p_in[i] = np.max(x_p.imag) / np.pi * g**2
+    p[tf_in] = p_in
+    if a>1:
+        p *= a
+    if normed:
+        return p*mu
+    else:
+        return p
+
+def pdf_g_a(g, a, nx=100, normed=False):
+    # return a list of x and probability density
+    # x endpoints are exact supports (pdf=0)
+    x12 = support_g_a(g,a)
+    x = np.linspace(x12[0], x12[1], nx)
+    p = pdf_g_a_x(x,g,a)
+    mu = mu_g_a(g,a)
+    if normed:
+        return x/mu, p*mu
+    else:
+        return x, p
+
+def cdf_g_a_x(x,g,a, normed=False):
+    # cdf value at given point(s) x
+    return pdf2cdf(x, (g,a), mu_g_a, support_g_a, pdf_g_a_x, normed)
+
+def cdf_g_a(g,a, nx=40, normed=False):
+    # x, cdf pairs spanning the support
+    # the discritization (nx points) is based on evenly dividing 1/eig
+    x12 = support_g_a(g,a)
+    x = np.linspace(x12[0], x12[1], nx)
+    P = cdf_g_a_x(x,g,a)
+    mu = mu_g_a(g,a)
+    if normed:
+        return x/mu, P
+    else:
+        return x, P
+
+
+
+
+
+
+
+
+# space-sampled theory for iid Gaussian random connectivity
+def mu_g_f(g,f):
+    # mean of cov eigs
+    return 1/(1-g**2)
+
+def support_g_f(g,f, normed=False):
+    # Bisection from the non-sample case support
+    if f==1:
+        return support_g(g,normed)
+    else:
+        max_iter = 100
+        xtol = 1e-7
+        ytol = 1e-10
+        mu = mu_g(g)*g**2
+        x12_g = support_g(g)*g**2
+        r = (1-f)/f
+        eta = 1/g
+        pw = np.zeros(6)
+        a = x12_g[0]
+        b = mu
+        for t in range(max_iter):
+            z = (b+a)/2
+            if (b-a) < xtol:
+                break
+            else:
+                pw[5] =  -(f**3*r**2)
+                pw[0] = -f**3*z**5
+                pw[1] = f**2*z**3*(2 + f*(-3 + 2*r)*z)
+                pw[4] = -f*r*(-1 + 2*f + eta**2 + f**2*(-2 + 3*r)*z)
+                pw[2] = -f*z*(1 + z - eta**2*z + 2*f*(-2 + r)*z + f**2*(3 - 6*r + r**2)*z**2)
+                pw[3] = (1 + f**2*(2 - 4*r)*z - f**3*(1 - 6*r + 3*r**2)*z**2 - f*(1 + (-1 + eta**2)*(-1 + r)*z))
+                if np.max(np.roots(pw).imag) >  ytol:
+                    b = z
+                else:
+                    a = z
+        x1 = z
+        a = mu
+        b = x12_g[1]
+        for t in range(max_iter):
+            z = (b+a)/2
+            if (b-a) < xtol:
+                break
+            else:
+                pw[5] =  -(f**3*r**2)
+                pw[0] = -f**3*z**5
+                pw[1] = f**2*z**3*(2 + f*(-3 + 2*r)*z)
+                pw[4] = -f*r*(-1 + 2*f + eta**2 + f**2*(-2 + 3*r)*z)
+                pw[2] = -f*z*(1 + z - eta**2*z + 2*f*(-2 + r)*z + f**2*(3 - 6*r + r**2)*z**2)
+                pw[3] = (1 + f**2*(2 - 4*r)*z - f**3*(1 - 6*r + 3*r**2)*z**2 - f*(1 + (-1 + eta**2)*(-1 + r)*z))
+                if np.max(np.roots(pw).imag) >  ytol:
+                    a = z
+                else:
+                    b = z
+        x2 = z
+        x12 = np.array([x1,x2]) / g**2
+        if normed:
+            return x12/mu
+        else:
+            return x12
+
+def pdf_g_f_x(x,g,f, normed=False):
+    # return the prob density for a list of x
+    if f==1:
+        return pdf_g_x(x,g, normed)
+    else:
+        x = np.array(x)
+        mu = mu_g_f(g,f)
+        if normed:
+            x = x * mu
+        n = np.size(x)
+        p = np.zeros(n)
+        x12 = support_g_f(g,f)
+        # inside the support
+        tf_in = np.logical_and(x>x12[0], x<x12[1])
+        x_in = x[tf_in]
+        p_in = np.zeros(len(x_in))
+        eta = 1/g
+        r = (1-f)/f
+        pw = np.zeros(6)
+        for i, xi in enumerate(x_in):
+            z = xi * g**2
+            pw[5] =  -(f**3*r**2)
+            pw[0] = -f**3*z**5
+            pw[1] = f**2*z**3*(2 + f*(-3 + 2*r)*z)
+            pw[4] = -f*r*(-1 + 2*f + eta**2 + f**2*(-2 + 3*r)*z)
+            pw[2] = -f*z*(1 + z - eta**2*z + 2*f*(-2 + r)*z + f**2*(3 - 6*r + r**2)*z**2)
+            pw[3] = (1 + f**2*(2 - 4*r)*z - f**3*(1 - 6*r + 3*r**2)*z**2 - f*(1 + (-1 + eta**2)*(-1 + r)*z))
+            p_in[i] = np.max(np.roots(pw).imag)/np.pi * g**2
+        p[tf_in] = p_in
+        if normed:
+            return p*mu
+        else:
+            return p
+
+def pdf_g_f(g, f, nx=100, normed=False):
+    # return a list of x and probability density
+    # x endpoints are supports (pdf=0)
+    if f == 1:
+        return pdf_g(g,nx,normed)
+    else:
+        x12 = support_g_f(g,f)
+        x = np.linspace(x12[0], x12[1], nx)
+        p = pdf_g_f_x(x,g,f)
+        mu = mu_g_f(g,f)
+        if normed:
+            return x/mu, p*mu
+        else:
+            return x, p
+
+def cdf_g_f_x(x,g,f, normed=False):
+    # cdf value at given point(s) x
+    if f == 1:
+        return cdf_g_x(x,g,normed)
+    else:
+        return pdf2cdf(x, (g,f), mu_g_f, support_g_f, pdf_g_f_x, normed)
+
+def cdf_g_f(g,f, nx=40, normed=False):
+    # x, cdf pairs spanning the support
+    if f == 1:
+        return cdf_g(g,nx,normed)
+    else:
+        x12 = support_g_f(g,f)
+        x = np.linspace(x12[0], x12[1], nx)
+        P = cdf_g_f_x(x,g,f)
+        mu = mu_g_f(g,f)
+        if normed:
+            return x/mu, P
+        else:
+            return x, P
+
+
+
+
+
+
+# MP laws, one parameter a
+def support_MP(a):
+    x12 = np.array([(1-np.sqrt(a))**2, (1+np.sqrt(a))**2])
+    return x12
+
+def pdf_MP_x(x,a):
+    # return the prob density for a list of x
+    x = np.array(x)
+    n = np.size(x)
+    p = np.zeros(n)
+    x12 = support_MP(a)
+    # inside the support
+    tf_in = np.logical_and(x>x12[0], x<x12[1])
+    xz = x[tf_in]
+    pz = np.sqrt((x12[1]-xz)*(xz-x12[0])) / (2*np.pi*a*xz)
+    p[tf_in] = pz
+    return p
+
+def pdf_MP(a, nx=1000):
+    # return a list of x and probability density
+    x12 = support_MP(a)
+    x = np.linspace(x12[0], x12[1], nx)
+    p = pdf_MP_x(x,a)
+    return x, p
+
+def cdf_MP_x(x,a):
+    # cdf value at given point(s) x
+    id_sort = np.argsort(x)
+    x_sort = np.sort(x)
+    x12 = support_MP(a)
+    m = np.size(x)
+    P = np.zeros(m)
+    for i,xi in enumerate(x_sort):
+        if xi <= x12[0]:
+            P[i] = 0
+        elif xi >= x12[1]:
+            P[i] = 1
+        else:
+            if i>0:
+                P[i] = P[i-1] + integrate.quad(lambda x: pdf_MP_x(x,a),
+                max(x12[0], x_sort[i-1]), xi)[0]
+            else:
+                P[i] = integrate.quad(lambda x: pdf_MP_x(x,a), x12[0], xi)[0]
+    P_o = np.zeros(m) # original order
+    P_o[id_sort] = P
+    return P_o
+
+def cdf_MP(a, nx=40):
+    # x, cdf pairs spanning the support
+    x12 = support_a(a)
+    x = np.linspace(x12[0], x12[1], nx)
+    P = cdf_MP_x(x,a)
+    return x, P
+
+
+
+
+
+
+
 # deterministic connectivity
 def pdf_ring_NN(x,y, nx=1000):
     # x, y are left, right connections
@@ -476,6 +786,112 @@ def pdf_ring_NN_a_d(a, d, nx=1000):
         y0 = np.r_[0, y, 0]
         return x0, y0
 
+def pdf_ring_NN_ac_d_x(x, d):
+    # critical case
+    # symmetic case, a is the total connection i.e. a_i*d
+    # ai = 1/d
+    if d==1:
+        return x**(-5/4)/(2*np.pi * np.sqrt(2-1/np.sqrt(x)))
+    elif d==2:
+        from scipy.special import ellipk
+        a_i = 1/d
+        y = 1 - (1 - 1/np.sqrt(x))**2
+        y = ellipk(y) * x**(-3/2) /(np.pi**2)
+        return y
+    else:
+        y = np.array([F_J0_d((1-1/np.sqrt(x1))*d, d) for x1 in x])
+        y *= x**(-3/2)*d/2
+        return y
+
+
+
+
+# outlier location: perturb C
+def xmin_C_u_outlier(g):
+    x12 = support_g(g)
+    xmin = x12[1]**2/(x12[1]+ (3+np.sqrt(1+8/g**2))/(4*(1-g**2)))
+    return xmin
+
+def C_u_outlier(g, a):
+    A4 = 1/a**3
+    A3 = -3/a**2
+    A2 = 3/a+2/(a**2 * g**2)
+    A1 = -(1 + 1/(g**4 * a) + 3/(g**2 * a))
+    A0 = 1/g**4 + 1/(a*g**4) + 1/g**2
+    z4 = np.roots([A4,A3,A2,A1,A0])
+    id_sort = np.argsort(np.abs(z4.imag))
+    z4 = z4[id_sort]
+    if z4[2].imag > z4[3].imag:
+        z4 = z4[[0,1,3,2]]
+    if z4[0].real > z4[1].real or z4[0].imag > z4[1].imag:
+        z4 = z4[[1,0,2,3]]
+    x1p = z4[0].real
+    return x1p, z4
+
+# orthogonal u,v
+def xmin_J_uv_outlier(g):
+    x12 = support_g(g)
+    D12 = np.zeros(2)
+    D12[0] = (3-np.sqrt(1+8/g**2))/(4*(1-g**2)) #C_inv support (correspond to x12)
+    D12[1] = (3+np.sqrt(1+8/g**2))/(4*(1-g**2))
+    xmin12 = [np.sqrt(x12[i])/abs(D12[i]) for i in range(2)] # left and right outlier
+    xmin12 = np.array(xmin12)
+    return xmin12
+
+def J_uv_outlier(g, a):
+    A = -a**2-2*g**2
+    B = np.abs(a)*np.sqrt(a**2+4)
+    x12p = np.zeros(2)
+    x12p[0] = 4*a**2/(A-B)**2
+    x12p[1] = 4*a**2/(A+B)**2
+    return x12p
+
+
+# identical u,v
+def xmin_J_uu_outlier(g):
+    x12 = support_g(g)
+    D12 = np.zeros(2)
+    D12[0] = (3-np.sqrt(1+8/g**2))/(4*(1-g**2)) #C_inv support (correspond to x12)
+    D12[1] = (3+np.sqrt(1+8/g**2))/(4*(1-g**2))
+    f_Dz = lambda D,z: g**2*z*D**2 + (z+np.sqrt(z))*D + 1
+    xmin12 = [1/f_Dz(D12[i],1/x12[i]) for i in range(2)] # for x<0 and x>0
+    xmin12 = np.array(xmin12)
+    return xmin12
+
+def J_uu_outlier(g,a):
+    x12 = support_g(g)
+    D12 = np.zeros(2)
+    D12[0] = (3-np.sqrt(1+8/g**2))/(4*(1-g**2)) #C_inv support (correspond to x12)
+    D12[1] = (3+np.sqrt(1+8/g**2))/(4*(1-g**2))
+    if a<0:
+        db = 0
+        da = D12[0]
+    else:
+        db = D12[1]
+        da = 1/(1-g**2)
+    f_zD = lambda D: -1/(D*(g**2*D+1)) + 1/(g**2*D+1)**2
+    L_D = lambda D: g**2*D**2*f_zD(D) + (f_zD(D)+np.sqrt(f_zD(D)))*D+1-1/a
+    x12min = xmin_J_uu_outlier(g)
+    if a<1 and (a<x12min[0] or a>x12min[1]):
+        niter = 100
+        tol = 1e-9
+        for t in range(niter):
+            dx = (da+db)/2
+            if L_D(dx) > 0: #sign of L(db) depends on a
+                db = dx
+            else:
+                da = dx
+            if db-da < tol:
+                dx = (da+db)/2
+                break
+        zx = f_zD(dx)
+        return 1/zx
+    else:
+        return -1 # no outlier
+
+
+
+
 
 
 
@@ -525,15 +941,122 @@ def fit_cdf_g(x, cost='CvM'):
     gh = result.x
     mu = mu_g(gh)
     sigma2 = mu_x/mu
-    return gh, sigma2
+    cost = result.fun
+    return gh, sigma2, cost
+
+def fit_cdf_g_a(x, cost='CvM'):
+    # fitting to time-sampled iid Gaussian J theory
+    # x is a list of cov eigs
+    mu_x = np.mean(x)
+    x = x / mu_x
+    L = {
+    'CvM': lambda parameters: D_CvM(x, lambda x: cdf_g_a_x(x,*(parameters),normed=True)),
+    'KS': lambda parameters: D_KS(x, lambda x: cdf_g_a_x(x,*(parameters),normed=True))
+    }
+    result = opt.minimize(L[cost], x0=[0.5,0.5], bounds=([0.01,0.99], [0,10]))
+    if not result.success:
+        print('fitting unsuccessful')
+    gh,ah = result.x
+    mu = mu_g_a(gh,ah)
+    sigma2 = mu_x/mu
+    cost = result.fun
+    return gh, ah, sigma2, cost
+
+def fit_cdf_g_a0(x, a0, cost='CvM'):
+    # fitting to space-sampled iid Gaussian J theory, given f
+    # x is a list of cov eigs
+    mu_x = np.mean(x)
+    x = x / mu_x
+
+    L = {
+    'CvM': lambda g: D_CvM(x, lambda x: cdf_g_a_x(x,g,a0,normed=True)),
+    'KS': lambda g: D_KS(x, lambda x: cdf_g_a_x(x,g,a0,normed=True))
+    }
+    result = opt.minimize_scalar(L[cost], bounds=(0.01,0.99), method='Bounded')
+    if not result.success:
+        print('fitting unsuccessful')
+    gh = result.x
+    mu = mu_g_a(gh,a0)
+    sigma2 = mu_x/mu
+    cost = result.fun
+    return gh, sigma2, cost
+
+def fit_cdf_g_f0(x, f0, cost='CvM'):
+    # fitting to space-sampled iid Gaussian J theory, given f
+    # x is a list of cov eigs
+    mu_x = np.mean(x)
+    x = x / mu_x
+
+    L = {
+    'CvM': lambda g: D_CvM(x, lambda x: cdf_g_f_x(x,g,f0,normed=True)),
+    'KS': lambda g: D_KS(x, lambda x: cdf_g_f_x(x,g,f0,normed=True))
+    }
+    result = opt.minimize_scalar(L[cost], bounds=(0.01,0.99), method='Bounded')
+    if not result.success:
+        print('fitting unsuccessful')
+    gh = result.x
+    mu = mu_g_f(gh,f0)
+    sigma2 = mu_x/mu
+    return gh, sigma2, cost
+
+def fit_cdf_g_f(x, cost='CvM'):
+    # fitting to space-sampled iid Gaussian J theory
+    # x is a list of cov eigs
+    mu_x = np.mean(x)
+    x = x / mu_x
+    L = {
+    'CvM': lambda parameters: D_CvM(x, lambda x: cdf_g_f_x(x,*(parameters),normed=True)),
+    'KS': lambda parameters: D_KS(x, lambda x: cdf_g_f_x(x,*(parameters),normed=True))
+    }
+    result = opt.minimize(L[cost], x0=[0.5,0.5], bounds=([0.01,0.99], [0.001,1]))
+    if not result.success:
+        print('fitting unsuccessful')
+    gh,fh = result.x
+    mu = mu_g_f(gh,fh)
+    sigma2 = mu_x/mu
+    cost = result.fun
+    return gh, fh, sigma2, cost
+
+def fit_cdf_g_kre(x, cost='CvM'):
+    # fitting to space-sampled iid Gaussian J theory
+    # x is a list of cov eigs
+    mu_x = np.mean(x)
+    x = x / mu_x
+    L = {
+    'CvM': lambda parameters: D_CvM(x, lambda x: cdf_g_kre_x(x,*(parameters),normed=True)),
+    'KS': lambda parameters: D_KS(x, lambda x: cdf_g_kre_x(x,*(parameters),normed=True))
+    }
+    result = opt.minimize(L[cost], x0=[0.5,-0.1], bounds=([0.01,0.99], [-0.99,1]))
+    if not result.success:
+        print('fitting unsuccessful')
+    gh,kreh = result.x
+    mu = mu_g_kre(gh,kreh)
+    sigma2 = mu_x/mu
+    cost = result.fun
+    return gh, kreh, sigma2, cost
+
+
+def fit_cdf_MP(x, cost='CvM'):
+    # fitting to MP law
+    # x is a list of cov eigs
+    mu_x = np.mean(x)
+    x = x / mu_x
+    L = {
+    'CvM': lambda a: D_CvM(x, lambda x: cdf_MP_x(x,a)),
+    'KS': lambda a: D_KS(x, lambda x: cdf_MP_x(x,a))
+    }
+    result = opt.minimize_scalar(L[cost], bounds=(0.01,0.999), method='Bounded')
+    if not result.success:
+        print('fitting unsuccessful')
+    ah = result.x
+    mu = 1
+    sigma2 = mu_x/mu
+    cost = result.fun
+    return ah, sigma2, cost
 
 
 
-
-
-
-
-# for finite size netw simulation
+# for simulation
 def relu(x):
     r = x * (x>=0)
     return r
@@ -544,6 +1067,15 @@ def J2C(J):
     C = np.dot(C.T, C)
     C = np.linalg.inv(C)
     return C
+
+# def JY2C(J):
+#     n,_ = J.shape
+#     y = solve(eye(n) - J, ones(n))
+#     y[y<0] = 0
+# #     y -= min(0,min(y))
+#     C = solve(eye(n)-J, diag(sqrt(y)))
+#     C = dot(C, C.T)
+#     return C
 
 def C2R(C):
     d = np.diag(C)

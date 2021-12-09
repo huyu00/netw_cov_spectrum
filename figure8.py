@@ -137,29 +137,29 @@ fig.savefig('./figure/figure8b_folded.png', dpi=300)
 # print('calculation time:', t1-t0)
 # with open('./data/figure8c.npz','wb') as file1:
 #     np.savez(file1, x_ls, px_ls, d_ls, a, nx)
-#
-# # plot from data
-# with np.load('./data/figure8c.npz') as file1:
-#     x_ls = file1['arr_0']
-#     px_ls = file1['arr_1']
-#     d_ls = file1['arr_2']
-#     a = file1['arr_3']
-#     nx = file1['arr_4']
-# for i, d in enumerate(d_ls):
-#     fig = plt.figure(figsize=(8,6))
-#     x = x_ls[i]
-#     px = px_ls[i]
-#     if d>2:
-#         plt.plot(x, px, color='b', linewidth=1.5, label=str(d)+'D ring')
-#     else:
-#         plt.plot(x, px, color='b', linewidth=1.5, label=str(d)+'D ring')
-#         yline = linspace(0,3,400)
-#         plt.plot(1*ones(400), yline, color='grey', linestyle='--', linewidth=1.5)
-#         plt.ylim(top=1.5)
-#     plt.xlabel('cov eigenvalues')
-#     plt.ylabel('probabilty')
-#     plt.legend()
-#     plt.ylim(bottom=0)
-#     plt.title('Dim=' + str(d))
-#     plt.tight_layout()
-#     fig.savefig('./figure/figure8c_'+str(d)+'.png', dpi=300)
+
+# plot from data
+with np.load('./data/figure8c.npz') as file1:
+    x_ls = file1['arr_0']
+    px_ls = file1['arr_1']
+    d_ls = file1['arr_2']
+    a = file1['arr_3']
+    nx = file1['arr_4']
+for i, d in enumerate(d_ls):
+    fig = plt.figure(figsize=(8,6))
+    x = x_ls[i]
+    px = px_ls[i]
+    if d>2:
+        plt.plot(x, px, color='b', linewidth=1.5, label=str(d)+'D ring')
+    else:
+        plt.plot(x, px, color='b', linewidth=1.5, label=str(d)+'D ring')
+        yline = linspace(0,3,400)
+        plt.plot(1*ones(400), yline, color='grey', linestyle='--', linewidth=1.5)
+        plt.ylim(top=1.5)
+    plt.xlabel('cov eigenvalues')
+    plt.ylabel('probabilty')
+    plt.legend()
+    plt.ylim(bottom=0)
+    plt.title('Dim=' + str(d))
+    plt.tight_layout()
+    fig.savefig('./figure/figure8c_'+str(d)+'.png', dpi=300)

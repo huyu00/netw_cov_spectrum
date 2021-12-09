@@ -168,3 +168,43 @@ plt.ylabel('probabilty')
 plt.ylim(bottom=0)
 plt.tight_layout()
 fig.savefig('./figure/figure6f.png', dpi=600, transparent=True)
+
+
+
+# Dales law EI network, Kab model
+g = 0.4
+K0 = 60
+N = 1000
+Ne = int(N/2)
+Ni = N-Ne
+Ns = [0,Ne,N]
+# K = np.array([[1, 3],[2,4]])**2*K0
+# K = np.array([[2,3],[4,5]])**2*K0
+K = np.array([[0.5,1.5],[1,2]])**2*K0
+P = K/N
+# W = np.array([[1, -1],[1,-1]]) * g / sqrt(K)
+W = np.array([[1, -1],[1,-1]]) * g / sqrt(K*(1-K/N)) # improve for finite K,N
+print('connection prob:')
+print(P)
+J = zeros((N,N))
+for i in range(2):
+    for j in range(2):
+        N1 = Ns[i+1] - Ns[i]
+        N2 = Ns[j+1] - Ns[j]
+        IX1 = range(Ns[i],Ns[i+1])
+        IX2 = range(Ns[j],Ns[j+1])
+        J[np.ix_(IX1,IX2)] = \
+            np.random.binomial(1, P[i,j], (N1,N2))*W[i,j]
+x,px = pdf_g(g, nx=2000)
+C = J2C(J)
+eig_C = eigvalsh(C)
+fig = plt.figure(figsize=(9,6))
+plt.hist(eig_C, 60, density=True, label=r'$N='+str(N)+'$, EI netw')
+plt.plot(x,px, linewidth=2.5, label='Gaussian theory')
+# plt.plot([x[0],x[-1]], [0,0], '.', markersize=10)
+plt.legend()
+plt.xlabel('cov eigenvalues')
+plt.ylabel('probabilty')
+plt.ylim(bottom=0)
+plt.tight_layout()
+fig.savefig('./figure/figure6_EI_Kab_neg.png', dpi=600, transparent=True)
