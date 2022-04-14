@@ -263,6 +263,40 @@ plt.ylim(bottom=0)
 plt.tight_layout()
 fig.savefig('./figure/figure5d.png', dpi=600)
 
+
+
+# example spectrum with normal matching
+plt.rcParams.update({'font.size': 26})
+iplot = 0
+kre_ls = [0.2,0.5]
+# g = 1
+# gr = g*(1+kre)
+gr_ls = [0.4,0.6]
+fig = plt.figure(figsize=(8,6))
+for kre in kre_ls:
+    for gr in gr_ls:
+        iplot += 1
+        g = gr/(1+kre)
+        plt.clf()
+        x,px = pdf_g_kre(g,kre, nx=10000)
+        line_label = r'$g_r='+str(gr)+',\;\hat{\kappa}_{re}='+str(kre)+'$'
+        line = plt.plot(x,px,'b', linewidth=2, label=line_label)
+        plt.plot([x[0],x[-1]], [0,0], '.',color=line[0].get_color(), markersize=30)
+        xn, pxn = pdf_g_kre_normal(g,kre, nx=10000)
+        line = plt.plot(xn,pxn, 'm', linewidth=2, label='matching normal')
+        plt.plot([xn[0],xn[-1]], [0,0], '.',color=line[0].get_color(), markersize=30)
+        # i_max = np.argmax(pxn)
+        # plt.scatter(xn[i_max], pxn[i_max],20, 'm')
+        plt.legend()
+        plt.xlabel('cov eigenvalues')
+        plt.ylabel('probabilty')
+        plt.ylim(bottom=0)
+        plt.tight_layout()
+        fig.savefig('./figure/figure5d_positive_kappa_'+str(iplot)+'.png',
+            dpi=300, transparent=True)
+
+
+
 # illustrating normal matching spectrum
 kre = -0.7
 gr = 0.3

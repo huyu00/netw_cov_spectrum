@@ -35,6 +35,39 @@ for g in g_ls:
         plt.tight_layout()
         fig.savefig('./figure/figure1a_'+str(ifig)+'.png', dpi=600)
 
+
+# average over multiple trials
+# plt.rcParams.update({'font.size': 28}) # 1x4 panel
+# ntrial = 40
+# g_ls = [0.5]
+# N_ls = [100, 400]
+# ifig = 0
+# for g in g_ls:
+#     for N in N_ls:
+#         eig_C_trial = np.zeros(N*ntrial)
+#         for i in range(ntrial):
+#             ifig += 1
+#             J = g * randn(N,N)/sqrt(N)
+#             C = J2C(J)
+#             eig_C = eigvalsh(C)
+#             eig_C_trial[i*N : (i+1)*N] = eig_C
+#         x, px = pdf_g(g, nx=1000)
+#         fig = plt.figure(figsize=(8,6))
+#         plt.hist(eig_C_trial, 100, density=True, histtype='step',
+#          label='N='+str(N)+' x '+str(ntrial)+' trials')
+#         plt.plot(x, px, linewidth=1.5, label='theory')
+#         plt.plot([x[0],x[-1]], [0,0], '.', markersize=10)
+#         plt.xlabel('cov eigenvalues')
+#         plt.ylabel('probabilty')
+#         plt.legend()
+#         plt.title('g='+str(g))
+#         plt.tight_layout()
+#         fig.savefig('./figure/figure1a_trial_'+str(ifig)+'.png',
+#             dpi=300,  transparent=True)
+
+
+
+
 # different g
 g_ls = [0.3,0.4,0.5,0.6,0.7]
 x12_ls = []

@@ -162,9 +162,11 @@ for i in range(ng):
     #     hist_label = r'$N^*='+str(n)+'$'
     # else:
     if flag_exclude_PC1:
-        hist_label = r'$N='+str(n+1)+'$' # previously n=n-1...
+        dim_Cg = sum(eig_Cg)**2/sum(eig_Cg**2)/(n+1)
+        hist_label = r'$N='+str(n+1)+'$, $\hat{D}='+str(round(dim_Cg,2))+'$' # previously n=n-1...
     else:
-        hist_label = r'$N='+str(n)+'$'
+        dim_Cg = sum(eig_Cg)**2/sum(eig_Cg**2)/(n)
+        hist_label = r'$N='+str(n)+'$, $\hat{D}='+str(round(dim_Cg,2))+'$'
     if i==2:
         plt.hist(eig_Cg, 400, density=True, label=hist_label)
     else:
@@ -189,7 +191,8 @@ for i in range(ng):
     else:
         plt.ylim(top = min(3,plt.ylim()[1]))
     plt.tight_layout()
-    fig.savefig('./figure/fish_data_run'+str(run_id)+'_id'+str(g_select[i])+'.png', dpi=300)
+    fig.savefig('./figure/fish_data/fish_data_run'+str(run_id)+'_id'+str(g_select[i])+'.png',
+        dpi=300, transparent=True)
 
 fig = plt.figure(figsize=(6,5.5))
 plt.plot(cost_ls, MP_cost_ls, 'ko', markersize = 10)
@@ -201,7 +204,7 @@ y12 = plt.ylim()
 xline = linspace(min(x12[0],y12[0])*0.95, max(x12[1],y12[1])*1.05, 100)
 plt.plot(xline, xline, 'r--')
 plt.tight_layout()
-fig.savefig('./figure/fish_data_run'+str(run_id)+'_error.png', dpi=300)
+fig.savefig('./figure/fish_data_run'+str(run_id)+'_error.png', dpi=300, transparent=True)
 print('MP cost order:', np.argsort(MP_cost_ls)+1) # to label clusters
 print('g-a cost order:', np.argsort(cost_ls)+1) # to label clusters
 

@@ -36,6 +36,7 @@ Note that the filename such as`figure3.py` may not match with the figure number 
 |`figure9.py` | Example of separating low-rank components in the covariance|
 |`figure10.py` | Verifying approximations with uniform covariance diagonal and self-coupling|
 |`fish_data.py` |Example application to calcium imaging data in larval zebrafish|
+|`nonlinear_sim.py` |Simulations of nonlinear rate neuron networks and fitting|
 |`/data/select_cluster_core_F9.mat` |Exerpt calcium imaging data from  [Chen et al, Neuron, 2019](https://www.cell.com/neuron/fulltext/S0896-6273(18)30844-4) |
 |`/data/`| Contains pre-computed data for longer simulations| 
 

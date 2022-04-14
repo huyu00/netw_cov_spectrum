@@ -191,6 +191,41 @@ fig.savefig('./figure/figure7a.png', dpi=300)
 
 
 
+# dimension for the time-sampled and space-sampled figure
+plt.rcParams.update({'font.size': 34})
+
+g = 0.4
+alpha_ls = linspace(0,1,100)
+alpha_example = [0, 0.1, 0.3, 0.5, 0.7]
+color_example = ['k','tab:blue','tab:orange', 'tab:green','tab:red']
+D0 = (1-g**2)**2
+fig = plt.figure(figsize=(8,6))
+line = plt.plot(alpha_ls, D0/(1+D0*alpha_ls))
+for i,alpha in enumerate(alpha_example):
+    plt.plot(alpha, D0/(1+D0*alpha),'.',color=color_example[i],markersize=25)
+plt.xlabel(r'$\alpha$')
+plt.ylabel(r'$\hat{D}$')
+plt.tight_layout()
+fig.savefig('./figure/figure7a_dim.png',
+    dpi=300, transparent=True)
+
+
+g = 0.5
+f_ls = linspace(0,1,100)
+f_example = [0, 0.1, 0.3, 0.5, 0.7]
+color_example = ['k','tab:blue','tab:orange', 'tab:green','tab:red']
+D0 = (1-g**2)**2
+fig = plt.figure(figsize=(8,6))
+line = plt.plot(f_ls, D0/(f_ls+(1-f_ls)*D0))
+for i,f in enumerate(f_example):
+    plt.plot(f,  D0/(f+(1-f)*D0),'.',color=color_example[i],markersize=25)
+plt.xlabel(r'$f$')
+plt.ylabel(r'$\hat{D}$')
+plt.tight_layout()
+fig.savefig('./figure/figure7b_dim.png',
+    dpi=300, transparent=True)
+
+
 
 
 
