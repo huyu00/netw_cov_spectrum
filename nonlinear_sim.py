@@ -36,7 +36,7 @@ def cov_XY_bin(X,Y,nt_bin):
     Ybin = np.mean(np.reshape(Y[:,:nbin*nt_bin],(nx,nbin,nt_bin)),axis=2)
     Xbin -= np.outer(np.mean(Xbin,axis=1),ones(nbin))
     Ybin -= np.outer(np.mean(Ybin,axis=1),ones(nbin))
-    C = Xbin @ Ybin.T
+    C = Xbin @ Ybin.T / (nbin-1)
     return C
 
 
@@ -55,25 +55,25 @@ run_id = '3'
 flag_load_data = True
 flag_load_fit_g = True
 if not flag_load_data:
-    g = 0.4
+    g = 0.8
     n = 400
     tau = 1 # neuronal time constant
-    sigma = 0.5 # white noise sd
+    sigma = 1 # white noise sd
     flag_phi = 'tanh'
     if flag_phi=='lin':
         phi = lambda x:x
+        dphi = lambda x:1
     elif flag_phi=='tanh':
         phi = lambda x: np.tanh(x) # activation function
+        dphi = lambda x: np.cosh(x)**(-2)
     else:
         assert 0
-    T = 10000  # simulation length
+    T = 10000 # simulation length
     T0 = 50 # warm up time
     ntrial = 4 # repeats of T-length simulations to avoid memory overflow
     T_total = T*ntrial
     dt = 0.01 # simulation time step
     n_Dt = 10
-    # dt = 0.1 # simulation time step
-    # n_Dt = 1
     Dt = n_Dt*dt # recorded time step, resolution of the correlation function
     t_bin = 10 # length of the time window for long-time/zero-frequency covariance
     t_corr_rad = 10 # half length of correlation function window
@@ -96,8 +96,10 @@ if not flag_load_data:
     assert m1<8
     H = zeros((n,nT)) # activity sampled at Dt
     H_avg = zeros((n,nT)) # activity averaged over Dt bin
+    R_avg = zeros((n,nT)) # activity averaged over Dt bin
     h = zeros(n)
     h_avg = zeros(n)
+    r_avg = zeros(n)
     corr_all_h = zeros(2*nt_corr_rad+1)
     corr_all_r = zeros(2*nt_corr_rad+1)
     Ch = zeros((n,n))
@@ -111,23 +113,27 @@ if not flag_load_data:
         t0 = timeit.default_timer()
         for i in range(nT):
             h_avg = 0
+            r_avg = 0
             for j in range(n_Dt):
                 h += dt/tau*(-h + J @ phi(h)) + sqrt(dt/tau)*sigma*randn(n)
                 h_avg += h
+                r_avg += phi(h)
             h_avg /= n_Dt
+            r_avg /= n_Dt
             H[:,i] = np.copy(h)
             H_avg[:,i] = np.copy(h_avg)
+            R_avg[:,i] = np.copy(r_avg)
         t1 = timeit.default_timer()
         time_sim += t1-t0
         # population correlation function and covariance, cij=cov(x_i(t),x_j(t-tau))
-        h_avg = np.mean(H,axis=0)
-        r_avg = np.mean(phi(H),axis=0)
-        corr_all_h += corr_xy(h_avg,h_avg,nt_corr_rad)
-        corr_all_r += corr_xy(r_avg,r_avg,nt_corr_rad)
+        h_pop_avg = np.mean(H,axis=0)
+        r_pop_avg = np.mean(phi(H),axis=0)
+        corr_all_h += corr_xy(h_pop_avg,h_pop_avg,nt_corr_rad)
+        corr_all_r += corr_xy(r_pop_avg,r_pop_avg,nt_corr_rad)
         # covariance matrix
         t0 = timeit.default_timer()
-        Ch += cov_XY_bin(H_avg,H_avg,nt_bin)
-        Cr += cov_XY_bin(phi(H_avg),phi(H_avg),nt_bin)
+        Ch += cov_XY_bin(H_avg,H_avg,nt_bin) / t_bin
+        Cr += cov_XY_bin(R_avg,R_avg,nt_bin) / t_bin
         t1 = timeit.default_timer()
         time_cov += t1-t0
     corr_all_h /= ntrial
@@ -142,9 +148,10 @@ if not flag_load_data:
     t1 = timeit.default_timer()
     print('eig time:', round(t1-t0,5))
     # save simulation data
+    H = H[:,-int(round(100/Dt)):]    # truncate H to T=100 for smaller files
     with open('./data/nonlinear_sim'+str(run_id)+'.npz','wb') as file1:
         np.savez(file1,g,n,tau,sigma,flag_phi,T,ntrial,dt,n_Dt,t_bin,
-        t_corr_rad,J,Ch,Cr,corr_all_h,corr_all_r,H,H_avg,time_sim)
+        t_corr_rad,J,Ch,Cr,corr_all_h,corr_all_r,H,time_sim)
 else:
     # load simulation data
     with np.load('./data/nonlinear_sim'+str(run_id)+'.npz') as file1:
@@ -165,12 +172,13 @@ else:
         corr_all_h = file1['arr_14']
         corr_all_r = file1['arr_15']
         H = file1['arr_16']
-        H_avg = file1['arr_17']
-        time_sim = file1['arr_18']
+        time_sim = file1['arr_17']
     if flag_phi=='lin':
         phi = lambda x:x
+        dphi = lambda x:1
     elif flag_phi=='tanh':
         phi = lambda x: np.tanh(x) # activation function
+        dphi = lambda x: np.cosh(x)**(-2)
     else:
         assert 0
     T_total = T*ntrial
@@ -199,7 +207,7 @@ file_pre += '_'
 
 # combined histogram
 plt.rcParams.update({'font.size': 26})
-fig = plt.figure(1, figsize=(8,4))
+fig = plt.figure(1, figsize=(8,4.5))
 plt.clf()
 ax1 = plt.subplot(111)
 hlin = np.reshape(H,[-1])
@@ -293,7 +301,7 @@ print('fit g-a0 time:', round(time_fit_gh,5))
 
 # hist adjustment for better visualization
 if g==0.8:
-    nbin_hist = 120
+    nbin_hist = 100
 elif g==1.2:
     nbin_hist = 200
 else:
@@ -302,7 +310,7 @@ plt.figure(4,figsize=(8,6))
 plt.clf()
 plt.hist(eig_Ch/np.mean(eig_Ch), nbin_hist, density=True, label='N='+str(n))
 x, px = pdf_g_a(gh_h, alpha, nx=1000, normed=True)
-line = plt.plot(x, px, linewidth=1.5, label='gh-a, gh='+str(round(gh_h,2)))
+line = plt.plot(x, px, linewidth=3, label='gh-a, gh='+str(round(gh_h,2)))
 plt.plot([x[0],x[-1]], [0,0], '.', color=line[0].get_color(), markersize=5)
 # # time-sampled theory
 # x, px = pdf_g_a(g, alpha, nx=1000, normed=True)
@@ -313,18 +321,18 @@ plt.plot([x[0],x[-1]], [0,0], '.', color=line[0].get_color(), markersize=5)
 # line = plt.plot(x, px, linewidth=1.5, label='g theory')
 # plt.plot([x[0],x[-1]], [0,0], '.', color=line[0].get_color(), markersize=10)
 plt.legend()
-plt.title('g='+str(g)+', sd='+str(round(h_sd_avg,2)))
+plt.title(r'$g='+str(g)+'$, $\sigma='+str(sigma)+'$')
 plt.savefig(file_pre+'eig_h.png',
     dpi=300, transparent=True)
 plt.figure(4,figsize=(8,6))
 plt.clf()
 plt.hist(eig_Cr/np.mean(eig_Cr), nbin_hist, density=True, label='N='+str(n))
 x, px = pdf_g_a(gh_r, alpha, nx=1000, normed=True)
-line = plt.plot(x, px, linewidth=1.5, label=r'$\hat{g}='+str(round(gh_r,2))+'$')
+line = plt.plot(x, px, linewidth=3, label=r'$\hat{g}='+str(round(gh_r,2))+'$')
 plt.plot([x[0],x[-1]], [0,0], '.', color=line[0].get_color(), markersize=10)
 # # time-sampled theory
 # x, px = pdf_g_a(g, alpha, nx=1000, normed=True)
-# line = plt.plot(x, px, linestyle='--',linewidth=1.5, label=r'$g='+str(g)+'$')
+# line = plt.plot(x, px, linestyle='--',linewidth=3, label=r'$g='+str(g)+'$')
 # plt.plot([x[0],x[-1]], [0,0], '.', color=line[0].get_color(), markersize=10)
 # # exact cov theory
 # x, px = pdf_g(g, nx=1000, normed=True)
