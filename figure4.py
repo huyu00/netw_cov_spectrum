@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from cov_spectrum_random_netw import (pdf_g, pdf_g_x,
-    dim_g_kre, support_g, pdf_g_kre, P_branch_g_kre, pdf_P_g_kre_x)
+from cov_spectrum_random_netw import *
 from cov_spectrum_random_netw import J2C, J_g_kre
 from numpy.random import randn
 from numpy.linalg import eigvals, eigvalsh
@@ -93,6 +92,95 @@ plt.ylabel('probabilty')
 plt.title('Fix $g_r='+str(gr)+'$')
 plt.tight_layout()
 fig.savefig('./figure/figure4b_2.png', dpi=600)
+
+
+# power law as kre changes, near kre=1
+# fix gr
+gr = 0.995
+kre_ls = [0.3,0.5,0.7,1]
+flag_plot_powerlaw = True
+flag_zoom = False
+x12_ls = []
+x12c_ls = []
+if not flag_zoom:
+    fig = plt.figure(figsize=(8,6))
+else:
+    fig = plt.figure(figsize=(8,6))
+npoints = 4000
+if not flag_zoom:
+    ymin = 10**(-12.5)
+else:
+    ymin = 10**(-11)
+for i, kre in enumerate(kre_ls):
+    g = gr/(1+kre)
+    x12 = support_g_kre(g,kre)
+    if flag_zoom:
+        x = np.exp(linspace(np.log(1e2), np.log(x12[1]),npoints+2))
+        px = np.r_[pdf_g_kre_x(x[:-1],g,kre),ymin]
+    else:
+        x = np.exp(linspace(np.log(x12[0]), np.log(x12[1]),npoints+2))
+        px = np.r_[ymin,pdf_g_kre_x(x[1:-1],g,kre),ymin]
+    if kre<1 and kre>-1:
+        line = plt.loglog(x,px, linewidth=1, label=r'$\kappa='+str(kre)+'$')
+        tf_plot = x>=x[0]
+        if i == 0 and flag_plot_powerlaw:
+            px2 = sqrt(3)/(2*np.pi) * x[tf_plot]**(-5/3)*(1-kre)**(1/3)*(1+kre)
+            plt.loglog(x[tf_plot],px2, '--', linewidth=1, color = line[0].get_color())
+    elif kre==1:
+        line = plt.loglog(x,px, linewidth=1,color='k', label=r'$\kappa='+str(kre)+'$')
+        tf_plot = x>=x[0]
+        if flag_plot_powerlaw:
+            px2 = sqrt(2)/(np.pi) * x[tf_plot]**(-7/4)
+            plt.loglog(x[tf_plot],px2, 'k--', linewidth=1)
+plt.ylim(bottom=ymin)
+# plt.ylim(top=10)
+# plt.xlim(right=10**(2.5))
+if not flag_zoom:
+    plt.legend()
+plt.xlabel('cov eigenvalues')
+plt.ylabel('probabilty')
+if not flag_zoom:
+    plt.title('Fix $g_r='+str(gr)+'$')
+plt.tight_layout()
+fig.savefig('./figure/figure4b_powerlaw.png',
+    dpi=300, transparent=True)
+
+
+
+
+# power law as kre changes, near kre=-1
+# fix gr
+gr = 0.8
+kre_ls = [-0.3,-0.5,-0.7,-0.9]
+x12_ls = []
+x12c_ls = []
+fig = plt.figure(figsize=(8,6))
+npoints = 4000
+ymin = 10**(-7)
+for i, kre in enumerate(kre_ls):
+    g = gr/(1+kre)
+    x12 = support_g_kre(g,kre)
+    x = np.exp(linspace(np.log(x12[0]), np.log(x12[1]),npoints+2))
+    px = np.r_[ymin,pdf_g_kre_x(x[1:-1],g,kre),ymin]
+    if kre<1 and kre>-1:
+        line = plt.loglog(x,px, linewidth=1.5, label=r'$\kappa='+str(kre)+'$')
+        tf_plot = x>=x[0]
+        if i == 0:
+            # px2 = sqrt(3)/(2*np.pi) * x[tf_plot]**(-5/3)*(1-kre)**(1/3)*(1+kre)
+            # plt.loglog(x[tf_plot],px2, '--', linewidth=1.5, color = line[0].get_color())
+            xplot = np.exp(linspace(np.log(1e-2), np.log(10**(2.5)),400))
+            px2 = sqrt(3)/(2*np.pi) * xplot**(-5/3)*(1-kre)**(1/3)*(1+kre)
+            plt.loglog(xplot,px2, '--', linewidth=1, color = line[0].get_color())
+plt.ylim(bottom=ymin)
+# plt.ylim(top=10)
+# plt.xlim(right=10**(2.5))
+plt.legend(loc='upper right')
+plt.xlabel('cov eigenvalues')
+plt.ylabel('probabilty')
+plt.title('Fix $g_r='+str(gr)+'$')
+plt.tight_layout()
+fig.savefig('./figure/figure4b_powerlaw_negkappa.png',
+    dpi=300, transparent=True)
 
 
 # dimension as g, kre
